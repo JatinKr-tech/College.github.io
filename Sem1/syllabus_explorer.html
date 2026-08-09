@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semester 1 Syllabus Explorer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 300px;
+        }
+
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white; }
+            .course-card { 
+                break-inside: avoid; 
+                border: 1px solid #e2e8f0;
+                margin-bottom: 2rem;
+                box-shadow: none !important;
+            }
+            .course-content { display: block !important; }
+        }
+
+        .print-only { display: none; }
+        
+        .math-font { font-style: italic; font-family: serif; }
+        
+        .transition-all { transition: all 0.3s ease; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <header class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 no-print">
+            <div>
+                <h1 class="text-3xl font-bold text-slate-900 tracking-tight">Syllabus Explorer</h1>
+                <p class="text-slate-500">First Semester Academic Program (B27 Batch)</p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="window.print()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-all shadow-sm flex items-center gap-2">
+                    <span>&#128422;</span> Generate Proper PDF
+                </button>
+            </div>
+        </header>
+
+        <!-- Intro Section -->
+        <section class="mb-10 no-print">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <h2 class="text-xl font-semibold mb-4 border-b pb-2">Academic Overview</h2>
+                <p class="text-slate-600 mb-6">
+                    This interactive dashboard provides a comprehensive breakdown of the first-semester curriculum. 
+                    Explore credit weightage, learning objectives, and detailed course content across basic sciences, 
+                    engineering skills, and general education requirements. Use the filters below to navigate your academic roadmap.
+                </p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                    <div class="chart-container">
+                        <canvas id="creditChart"></canvas>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                            <span class="text-sm text-slate-500 block">Total Credits</span>
+                            <span class="text-2xl font-bold text-indigo-600">22</span>
+                        </div>
+                        <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                            <span class="text-sm text-slate-500 block">Total Courses</span>
+                            <span class="text-2xl font-bold text-indigo-600">11</span>
+                        </div>
+                        <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                            <span class="text-sm text-slate-500 block">Lecture Hours</span>
+                            <span class="text-2xl font-bold text-indigo-600">14</span>
+                        </div>
+                        <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                            <span class="text-sm text-slate-500 block">Lab/Practice</span>
+                            <span class="text-2xl font-bold text-indigo-600">13</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Filters -->
+        <div class="mb-6 flex flex-wrap gap-3 no-print">
+            <button onclick="filterCourses('ALL')" class="filter-btn active px-4 py-1.5 rounded-full bg-slate-200 text-slate-700 font-medium text-sm hover:bg-indigo-100">All Modules</button>
+            <button onclick="filterCourses('BS')" class="filter-btn px-4 py-1.5 rounded-full bg-white border border-slate-200 text-slate-600 font-medium text-sm hover:bg-blue-50">Basic Science (BS)</button>
+            <button onclick="filterCourses('ES')" class="filter-btn px-4 py-1.5 rounded-full bg-white border border-slate-200 text-slate-600 font-medium text-sm hover:bg-orange-50">Engineering Skill (ES)</button>
+            <button onclick="filterCourses('GER')" class="filter-btn px-4 py-1.5 rounded-full bg-white border border-slate-200 text-slate-600 font-medium text-sm hover:bg-green-50">General (GER)</button>
+            <div class="ml-auto relative w-full md:w-64">
+                <input type="text" id="courseSearch" placeholder="Search syllabus..." onkeyup="searchCourses()" class="w-full px-4 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+            </div>
+        </div>
+
+        <!-- Course List -->
+        <div id="courseContainer" class="space-y-6">
+            <!-- Dynamic Injection Point -->
+        </div>
+
+        <footer class="mt-12 py-8 border-t text-center text-slate-400 text-sm no-print">
+            <p>&copy; 2024 Academic Curriculum Explorer | B27 Semester 1</p>
+        </footer>
+    </div>
+
+    <!-- Script for Logic -->
+    <script>
+        const courses = [
+            {
+                id: "HS10003",
+                title: "English Communication Skills",
+                type: "GER",
+                credits: "2-0-0-2",
+                clo: "Develop understanding of professional and technical communication processes in workplace contexts. Strengthen listening and speaking competencies for effective professional interaction. Expand reading abilities for comprehension and analysis of technical and digital texts.",
+                content: [
+                    "Fundamentals of Professional communication: General/Technical, Process, Verbal/Non-verbal, Flow, Levels, Barriers.",
+                    "Literature Component: 'The Gift of the Magi', O. Henry - Analysis of communication barriers.",
+                    "Professional Listening/Speaking: Phonetics, IPA, British/American accent, Grammar revision.",
+                    "Business Writing: Bias-free English, Paragraph styles, Business Letters (Enquiry, Complaint, Order).",
+                    "Technical Reports & GenAI: Formats, Referencing (IEEE/APA), Ethical use of AI in writing."
+                ],
+                textbooks: ["Effective Technical Communication - Rizvi & Patnaik", "Technical Communication - Raman & Sharma"]
+            },
+            {
+                id: "MA11011",
+                title: "Linear Algebra and Fourier Analysis",
+                type: "BS",
+                credits: "3-1-0-4",
+                clo: "Develop a strong foundation in linear algebra, matrix theory, eigenvalues, numerical methods for nonlinear equations, and Fourier analysis for function representation.",
+                content: [
+                    "Vector Space & Linear Systems: Rank, Consistency, Gauss elimination, Jacobi/Seidel methods.",
+                    "Eigenvalues & Eigenvectors: Diagonalization, Quadratic forms, Hermitian matrices.",
+                    "Numerical Methods: Bisection, Newton-Raphson, Interpolation (Newton/Lagrange), Numerical integration/differentiation.",
+                    "Fourier Series/Transform: Even/Odd functions, Half-range expansions, Sine/Cosine transforms, Convolution theorem."
+                ],
+                textbooks: ["Advanced Engineering Mathematics - Kreyszig", "Numerical Methods - Jain, Iyengar & Jain"]
+            },
+            {
+                id: "CH10009",
+                title: "Chemistry",
+                type: "BS",
+                credits: "3-0-0-3",
+                clo: "Provide foundation in chemistry principles bridging molecular behavior to engineering applications including thermodynamics, kinetics, and energy systems.",
+                content: [
+                    "Thermodynamics: Gibbs free energy, Phase equilibria, Clausius-Clapeyron equation.",
+                    "Kinetics & Catalysis: Integrated rate laws, Collision theory, Enzyme kinetics (Michaelis-Menten).",
+                    "Electrochemical Systems: Nernst equation, Fuel cells, Li-ion and Na-ion batteries.",
+                    "Characterization: UV-Vis, IR & Raman spectroscopy, XPS.",
+                    "Functional Materials: Magnetic materials, Liquid crystals (LCD applications)."
+                ],
+                textbooks: ["Engineering Chemistry - P. Rath"]
+            },
+            {
+                id: "EC10005",
+                title: "Electronic Circuits and Logic Design",
+                type: "ES",
+                credits: "3-0-0-3",
+                clo: "Foundational understanding of semiconductors, diodes, transistors, and digital logic gates, combinational and sequential circuits.",
+                content: [
+                    "Analog Circuits: P-N junction, BJT/JFET operation, Op-Amp characteristics.",
+                    "Boolean Algebra: K-Maps, SOP/POS forms, Binary codes.",
+                    "Combinational: Adders, Subtractors, Decoders, Encoders, Multiplexers.",
+                    "Sequential: Flip-flops (SR, D, JK, T), Shift registers, Asynchronous/Synchronous Counters."
+                ],
+                textbooks: ["Principles of Electronic Devices - Theraja & Sedha"]
+            },
+            {
+                id: "CH19001",
+                title: "Chemistry Laboratory",
+                type: "BS",
+                credits: "0-0-2-1",
+                clo: "Hands-on training in spectroscopic and analytical techniques spanning environmental chemistry, synthesis, and electrochemistry.",
+                content: [
+                    "Estimation: Total hardness (EDTA), NaOH/Na2CO3 mixtures.",
+                    "Titrations: Permanganate (Redox), Potentiometric, pH-metric, Conducto-metric.",
+                    "Kinetics: Acid-catalyzed hydrolysis rate constant.",
+                    "Instruments: Verification of Beer Lambert's Law, Colorimetry."
+                ],
+                textbooks: ["Chemistry Lab Manual - KIIT School of Applied Sciences"]
+            },
+            {
+                id: "CE18003",
+                title: "Engineering Drawing & Graphics",
+                type: "ES",
+                credits: "0-1-2-2",
+                clo: "Enable students to visualize and communicate engineering ideas graphically using manual drafting and CAD.",
+                content: [
+                    "Projection: Points, Lines (inclined), Planes (True shape).",
+                    "Solids: Prisms, Pyramids, Cylinders, Cones, Sectional views.",
+                    "Development: Surface development for sheet metal work.",
+                    "CAD: 2D drawing, editing commands, annotation in CAD environment."
+                ],
+                textbooks: ["Engineering Drawing + AutoCAD - K. Venugopal"]
+            },
+            {
+                id: "CH10015",
+                title: "Nanoscience",
+                type: "BS",
+                credits: "3-0-0-3",
+                clo: "Motivate students about emerging trends in Nanotechnology, synthesis, characterization, and diverse industrial applications.",
+                content: [
+                    "Basics: 0D-3D classifications, Surface-to-volume effects.",
+                    "Synthesis: Top-down (Ball milling, Lithography) and Bottom-up (Sol-gel, CVD).",
+                    "Characterization: XRD, SEM, TEM, AFM techniques.",
+                    "Applications: Cosmetics, Medical drug delivery, Aerospace composites.",
+                    "Safety: Toxicology, PPE, Regulatory frameworks."
+                ],
+                textbooks: ["Textbook of Nanoscience - Murty et al."]
+            },
+            {
+                id: "SY18001",
+                title: "Sports and Yoga",
+                type: "GER",
+                credits: "0-0-2-1",
+                clo: "Holistic development through yogic exercises, physical education, and sports participation for wellness and personality development.",
+                content: [
+                    "Yoga: Ashtanga Yoga, Surya Namaskar, Pranayama (Nadisodhana, Bhramari).",
+                    "Postures: Joint relaxation, Standing, Sitting, Prone, and Supine poses.",
+                    "Physical Ed: Concept of fitness, performance-related wellness.",
+                    "Practicum: Selection of sport (Volleyball, Basketball, Football, etc.)."
+                ],
+                textbooks: ["Yogic Education - K. Arya", "Foundation of Physical Education - C.K. Shekar"]
+            }
+        ];
+
+        function renderCourses(data) {
+            const container = document.getElementById('courseContainer');
+            container.innerHTML = '';
+
+            data.forEach(course => {
+                const badgeColor = course.type === 'BS' ? 'bg-blue-100 text-blue-700' : 
+                                   course.type === 'ES' ? 'bg-orange-100 text-orange-700' : 
+                                   'bg-green-100 text-green-700';
+
+                const card = document.createElement('div');
+                card.className = 'course-card bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden transition-all';
+                card.dataset.type = course.type;
+                
+                card.innerHTML = `
+                    <div class="p-5 flex flex-col md:flex-row justify-between items-start gap-4 cursor-pointer hover:bg-slate-50" onclick="toggleDetails('${course.id}')">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${badgeColor}">${course.type}</span>
+                                <span class="text-xs font-mono text-slate-400">${course.id}</span>
+                            </div>
+                            <h3 class="text-lg font-bold text-slate-800">${course.title}</h3>
+                            <p class="text-sm text-slate-500 mt-1 line-clamp-1">${course.clo}</p>
+                        </div>
+                        <div class="flex flex-col items-end">
+                            <div class="text-xs text-slate-400 mb-1">L-T-P-C</div>
+                            <div class="font-mono font-bold text-indigo-600">${course.credits}</div>
+                        </div>
+                    </div>
+                    <div id="detail-${course.id}" class="course-content hidden p-5 border-t border-slate-50 bg-slate-50/50">
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div class="lg:col-span-2 space-y-4">
+                                <div>
+                                    <h4 class="text-xs font-bold uppercase text-slate-400 mb-2 tracking-wider">Learning Objectives</h4>
+                                    <p class="text-sm text-slate-700 leading-relaxed">${course.clo}</p>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-bold uppercase text-slate-400 mb-2 tracking-wider">Course Modules</h4>
+                                    <ul class="space-y-2">
+                                        ${course.content.map(item => `
+                                            <li class="flex gap-2 text-sm text-slate-600">
+                                                <span class="text-indigo-400">&#8226;</span>
+                                                <span>${item}</span>
+                                            </li>
+                                        `).join('')}
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="space-y-4">
+                                <div>
+                                    <h4 class="text-xs font-bold uppercase text-slate-400 mb-2 tracking-wider">Primary Textbooks</h4>
+                                    <ul class="space-y-2">
+                                        ${course.textbooks.map(book => `
+                                            <li class="text-xs text-slate-600 italic bg-white p-2 rounded border border-slate-100 shadow-sm">${book}</li>
+                                        `).join('')}
+                                    </ul>
+                                </div>
+                                <div class="p-3 bg-indigo-50 rounded-lg">
+                                    <p class="text-[10px] font-bold uppercase text-indigo-400 mb-1">Status</p>
+                                    <p class="text-xs text-indigo-700">Mandatory Course Requirement</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function toggleDetails(id) {
+            const el = document.getElementById(`detail-${id}`);
+            el.classList.toggle('hidden');
+        }
+
+        function filterCourses(type) {
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('bg-slate-200', 'text-slate-700');
+                btn.classList.add('bg-white', 'text-slate-600');
+            });
+            event.currentTarget.classList.add('bg-slate-200', 'text-slate-700');
+
+            if (type === 'ALL') {
+                renderCourses(courses);
+            } else {
+                const filtered = courses.filter(c => c.type === type);
+                renderCourses(filtered);
+            }
+        }
+
+        function searchCourses() {
+            const query = document.getElementById('courseSearch').value.toLowerCase();
+            const filtered = courses.filter(c => 
+                c.title.toLowerCase().includes(query) || 
+                c.id.toLowerCase().includes(query) ||
+                c.content.some(m => m.toLowerCase().includes(query))
+            );
+            renderCourses(filtered);
+        }
+
+        // Initialize Chart
+        function initChart() {
+            const ctx = document.getElementById('creditChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Basic Science', 'Engineering Skill', 'General Education'],
+                    datasets: [{
+                        data: [12, 7, 3], // Approximate distribution
+                        backgroundColor: ['#3b82f6', '#f97316', '#22c55e'],
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20,
+                                font: { size: 11, family: 'Inter' }
+                            }
+                        },
+                        tooltip: {
+                            enabled: true,
+                            callbacks: {
+                                label: function(context) {
+                                    return ` ${context.label}: ${context.raw} Credits`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCourses(courses);
+            initChart();
+        });
+    </script>
+</body>
+</html>
